@@ -1,39 +1,81 @@
-from pyspark.sql import DataFrame, functions as F
+from pyspark.sql import DataFrame
+from pyspark.sql import functions as F
 
-
-def _trim_empty_to_null(df: DataFrame, columns: list[str]) -> DataFrame:
-    out = df
-    for name in columns:
-        if name in out.columns:
-            out = out.withColumn(
-                name, F.nullif(F.trim(F.col(name).cast("string")), F.lit(""))
-            )
-    return out
-
-
-def _normalize_snomed_code(column: str = "CODE") -> F.Column:
-    c = F.col(column)
-    return F.when(c.isNull(), F.lit(None)).otherwise(
-        F.format_string("%.0f", c.cast("double"))
-    )
+from src.etl.csv_utils import (
+    collapse_whitespace,
+    fix_stop_after_start,
+    normalize_key_uuid,
+    normalize_long_code,
+    parse_ts_any,
+    trim_empty_to_null,
+)
+from src.etl.transform.common import filter_by_patient_life_ts
 
 
 def transform(
-    procedures_raw: DataFrame, encounters_transformed: DataFrame
+    procedures_raw: DataFrame,
+    encounters: DataFrame,
+    patients: DataFrame,
 ) -> DataFrame:
-    keys = encounters_transformed.select(
-        F.col("Id").alias("ENCOUNTER")
-    ).where(F.col("ENCOUNTER").isNotNull()).distinct()
-    string_cols = ["PATIENT", "ENCOUNTER", "DESCRIPTION", "REASONCODE", "REASONDESCRIPTION"]
-    df = _trim_empty_to_null(procedures_raw, string_cols)
-    df = df.filter(F.col("ENCOUNTER").isNotNull())
-    df = df.join(keys, on="ENCOUNTER", how="inner")
+    enc = encounters.select(
+        F.col("Id").alias("ENCOUNTER"),
+        F.col("PATIENT").alias("_e_pat"),
+        F.col("START").alias("_e_start"),
+        F.col("STOP").alias("_e_stop"),
+    ).distinct()
+
+    string_cols = [
+        "PATIENT",
+        "ENCOUNTER",
+        "DESCRIPTION",
+        "REASONCODE",
+        "REASONDESCRIPTION",
+    ]
+    df = trim_empty_to_null(procedures_raw, [c for c in string_cols if c in procedures_raw.columns])
+    for c in ("PATIENT", "ENCOUNTER"):
+        if c in df.columns:
+            df = df.withColumn(c, normalize_key_uuid(c))
+    df = df.filter(F.col("ENCOUNTER").isNotNull() & F.col("PATIENT").isNotNull())
+
+    df = df.join(enc, on="ENCOUNTER", how="inner")
+    df = df.filter(F.col("PATIENT") == F.col("_e_pat"))
+
     df = (
-        df.withColumn("START", F.to_timestamp(F.col("START")))
-        .withColumn("STOP", F.to_timestamp(F.col("STOP")))
-        .withColumn("CODE", _normalize_snomed_code("CODE"))
-        .withColumn("BASE_COST", F.col("BASE_COST").cast("decimal(14,2)"))
+        df.withColumn("START", parse_ts_any(F.trim(F.col("START").cast("string"))))
+        .withColumn("STOP", parse_ts_any(F.trim(F.col("STOP").cast("string"))))
     )
-    return df.dropDuplicates(
-        ["ENCOUNTER", "CODE", "START", "STOP", "PATIENT"]
-    )
+    s, e = fix_stop_after_start("START", "STOP")
+    df = df.withColumn("START", s).withColumn("STOP", e)
+
+    df = df.filter(
+        F.col("START").isNotNull()
+        & (F.col("START") >= F.col("_e_start"))
+        & (F.col("START") <= F.col("_e_stop"))
+    ).drop("_e_pat", "_e_start", "_e_stop")
+
+    if "CODE" in df.columns:
+        df = df.withColumn("CODE", normalize_long_code("CODE"))
+    if "DESCRIPTION" in df.columns:
+        df = df.withColumn(
+            "DESCRIPTION",
+            collapse_whitespace(F.col("DESCRIPTION").cast("string")),
+        )
+    if "REASONCODE" in df.columns:
+        df = df.withColumn(
+            "REASONCODE",
+            F.when(
+                F.trim(F.col("REASONCODE").cast("string")) == "",
+                F.lit(None),
+            ).otherwise(normalize_long_code("REASONCODE")),
+        )
+    if "REASONDESCRIPTION" in df.columns:
+        df = df.withColumn(
+            "REASONDESCRIPTION",
+            collapse_whitespace(F.col("REASONDESCRIPTION").cast("string")),
+        )
+    if "BASE_COST" in df.columns:
+        df = df.withColumn("BASE_COST", F.col("BASE_COST").cast("decimal(18,4)"))
+
+    df = filter_by_patient_life_ts(df, patient_col="PATIENT", ts_col="START", patients=patients)
+
+    return df.dropDuplicates(["ENCOUNTER", "CODE", "START", "STOP", "PATIENT"])
