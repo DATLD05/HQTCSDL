@@ -2,11 +2,12 @@ from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
 from src.etl.csv_utils import (
-    collapse_whitespace,
     fix_stop_after_start,
+    normalize_code_canonical,
     normalize_key_uuid,
-    normalize_long_code,
+    normalize_money_decimal,
     parse_ts_any,
+    sanitize_text,
     trim_empty_to_null,
 )
 from src.etl.transform.common import filter_by_patient_life_ts
@@ -54,27 +55,21 @@ def transform(
     ).drop("_e_pat", "_e_start", "_e_stop")
 
     if "CODE" in df.columns:
-        df = df.withColumn("CODE", normalize_long_code("CODE"))
+        df = df.withColumn("CODE", normalize_code_canonical("CODE"))
     if "DESCRIPTION" in df.columns:
-        df = df.withColumn(
-            "DESCRIPTION",
-            collapse_whitespace(F.col("DESCRIPTION").cast("string")),
-        )
+        df = df.withColumn("DESCRIPTION", sanitize_text("DESCRIPTION"))
     if "REASONCODE" in df.columns:
         df = df.withColumn(
             "REASONCODE",
             F.when(
                 F.trim(F.col("REASONCODE").cast("string")) == "",
                 F.lit(None),
-            ).otherwise(normalize_long_code("REASONCODE")),
+            ).otherwise(normalize_code_canonical("REASONCODE")),
         )
     if "REASONDESCRIPTION" in df.columns:
-        df = df.withColumn(
-            "REASONDESCRIPTION",
-            collapse_whitespace(F.col("REASONDESCRIPTION").cast("string")),
-        )
+        df = df.withColumn("REASONDESCRIPTION", sanitize_text("REASONDESCRIPTION"))
     if "BASE_COST" in df.columns:
-        df = df.withColumn("BASE_COST", F.col("BASE_COST").cast("decimal(18,4)"))
+        df = df.withColumn("BASE_COST", normalize_money_decimal("BASE_COST"))
 
     df = filter_by_patient_life_ts(df, patient_col="PATIENT", ts_col="START", patients=patients)
 

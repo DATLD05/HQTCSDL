@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import shutil
 from pathlib import Path
+from typing import Mapping
 
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
@@ -134,3 +135,165 @@ def fix_stop_after_start(start_col: str, stop_col: str) -> tuple[F.Column, F.Col
 
 def lowercase_categorical(col_name: str) -> F.Column:
     return F.lower(F.trim(F.col(col_name).cast("string")))
+
+
+def sanitize_text(column: str, *, lower: bool = False, upper: bool = False) -> F.Column:
+    """
+    Generic text cleanup for real-world CSV fields:
+    - cast to string, trim, collapse whitespace
+    - remove control characters
+    - empty -> NULL
+    - optional lowercase/uppercase
+    """
+    c = collapse_whitespace(F.col(column).cast("string"))
+    c = F.regexp_replace(c, r"[\x00-\x1F\x7F]", " ")
+    c = collapse_whitespace(c)
+    c = F.when(c == "", F.lit(None)).otherwise(c)
+    if lower:
+        c = F.lower(c)
+    if upper:
+        c = F.upper(c)
+    return c
+
+
+def normalize_person_name(column: str) -> F.Column:
+    """
+    Normalize person-like names:
+    - remove digits/noise (e.g., Charles364 -> Charles)
+    - keep letters (incl. accented), apostrophes and hyphens
+    - collapse spaces, title case, empty -> NULL
+    """
+    c = sanitize_text(column)
+    c = F.regexp_replace(c, r"[0-9_]+", "")
+    c = F.regexp_replace(c, r"[^\p{L}\s'\-]", " ")
+    c = collapse_whitespace(c)
+    c = F.when(c == "", F.lit(None)).otherwise(c)
+    return F.initcap(F.lower(c))
+
+
+def normalize_category_mapped(
+    column: str,
+    mapping: Mapping[str, str],
+    *,
+    keep_unmapped: bool = True,
+) -> F.Column:
+    """
+    Normalize categorical values via canonical mapping dictionary.
+
+    Keys in ``mapping`` are matched against lower-trimmed input.
+    If keep_unmapped=True, unknown values are kept as lower-trimmed text;
+    otherwise unknown values become NULL.
+    """
+    base = lowercase_categorical(column)
+    if not mapping:
+        return base
+
+    pairs: list[F.Column] = []
+    for k, v in mapping.items():
+        pairs.extend([F.lit(k.strip().lower()), F.lit(v)])
+    map_expr = F.create_map(*pairs)
+
+    mapped = map_expr[base]
+    if keep_unmapped:
+        out = F.coalesce(mapped, base)
+    else:
+        out = mapped
+    return F.when(base == "", F.lit(None)).otherwise(out)
+
+
+def normalize_unit_symbol(column: str) -> F.Column:
+    """
+    Canonicalize common observation units.
+    Examples: KG/kilogram -> kg, centimeters -> cm, {score} -> score.
+    """
+    c = sanitize_text(column, lower=True)
+    c = F.regexp_replace(c, r"^\{(.+)\}$", "$1")
+    c = collapse_whitespace(c)
+
+    mapping = {
+        "kg": "kg",
+        "kgs": "kg",
+        "kilogram": "kg",
+        "kilograms": "kg",
+        "g": "g",
+        "gram": "g",
+        "grams": "g",
+        "mg": "mg",
+        "milligram": "mg",
+        "milligrams": "mg",
+        "cm": "cm",
+        "centimeter": "cm",
+        "centimeters": "cm",
+        "mm": "mm",
+        "mmhg": "mmhg",
+        "mm[hg]": "mmhg",
+        "%": "%",
+        "percent": "%",
+        "score": "score",
+    }
+    pairs: list[F.Column] = []
+    for k, v in mapping.items():
+        pairs.extend([F.lit(k), F.lit(v)])
+    map_expr = F.create_map(*pairs)
+    return F.coalesce(map_expr[c], c)
+
+
+def normalize_money_decimal(
+    column: str,
+    *,
+    precision: int = 18,
+    scale: int = 4,
+) -> F.Column:
+    """
+    Parse money-like strings to Decimal safely.
+    Supports common real-world forms like:
+      "$1,234.56", "USD 1234.56", "1.234,56 €", "1234.56"
+    Invalid/empty values become NULL.
+    """
+    raw = F.trim(F.col(column).cast("string"))
+    raw = F.when(raw == "", F.lit(None)).otherwise(raw)
+
+    cleaned = F.regexp_replace(raw, r"[^0-9,\.\-+]", "")
+    us_like = cleaned.rlike(r"^[+-]?\d{1,3}(,\d{3})*(\.\d+)?$|^[+-]?\d+(\.\d+)?$")
+    eu_like = cleaned.rlike(r"^[+-]?\d{1,3}(\.\d{3})*(,\d+)?$|^[+-]?\d+(,\d+)?$")
+    has_dot = F.instr(cleaned, ".") > 0
+    has_comma = F.instr(cleaned, ",") > 0
+
+    normalized = (
+        F.when(us_like, F.regexp_replace(cleaned, ",", ""))
+        .when(
+            eu_like & has_dot & has_comma,
+            F.regexp_replace(F.regexp_replace(cleaned, r"\\.", ""), ",", "."),
+        )
+        .when(eu_like & has_comma & (~has_dot), F.regexp_replace(cleaned, ",", "."))
+        .otherwise(cleaned)
+    )
+    return F.when(raw.isNull(), F.lit(None)).otherwise(
+        normalized.cast(T.DecimalType(precision, scale))
+    )
+
+
+def normalize_code_canonical(column: str) -> F.Column:
+    """
+    Canonical code normalizer for mixed numeric/text medical codes:
+    - numeric/scientific -> integer string via normalize_long_code
+    - trim spaces
+    - uppercase textual codes
+    - empty -> NULL
+    """
+    c = normalize_long_code(column)
+    c = F.regexp_replace(c, r"\s+", "")
+    c = F.when(c == "", F.lit(None)).otherwise(c)
+    return F.upper(c)
+
+
+def audit_flag_normalized(original_column: str, normalized_col: F.Column) -> F.Column:
+    """
+    True when normalized value differs from raw (after string-cast + trim).
+    Useful for columns like ``is_name_normalized``.
+    """
+    raw = F.trim(F.col(original_column).cast("string"))
+    norm = F.trim(normalized_col.cast("string"))
+    raw_cmp = F.coalesce(raw, F.lit(""))
+    norm_cmp = F.coalesce(norm, F.lit(""))
+    return raw_cmp != norm_cmp

@@ -5,7 +5,14 @@ from __future__ import annotations
 from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as F
 
-from src.etl.csv_utils import collapse_whitespace, normalize_key_uuid, trim_empty_to_null
+from src.etl.csv_utils import (
+    collapse_whitespace,
+    normalize_category_mapped,
+    normalize_key_uuid,
+    normalize_money_decimal,
+    normalize_person_name,
+    trim_empty_to_null,
+)
 
 
 def base_patient_keys(patients: DataFrame) -> DataFrame:
@@ -93,7 +100,7 @@ def base_patient_keys(patients: DataFrame) -> DataFrame:
     # Costs: preserve 0 as meaningful
     for money in ("HEALTHCARE_EXPENSES", "HEALTHCARE_COVERAGE"):
         if money in df.columns:
-            df = df.withColumn(money, F.col(money).cast("decimal(18,4)"))
+            df = df.withColumn(money, normalize_money_decimal(money))
     # Text cleanup: collapse whitespace; title-like fields
     for text in ("FIRST", "LAST", "MAIDEN", "ADDRESS", "CITY", "BIRTHPLACE"):
         if text in df.columns:
@@ -102,7 +109,22 @@ def base_patient_keys(patients: DataFrame) -> DataFrame:
         if cat in df.columns:
             df = df.withColumn(
                 cat,
-                F.initcap(F.lower(collapse_whitespace(F.col(cat).cast("string")))),
+                normalize_category_mapped(
+                    cat,
+                    {
+                        "s": "Single",
+                        "m": "Married",
+                        "d": "Divorced",
+                        "w": "Widowed",
+                        "white": "White",
+                        "black": "Black",
+                        "asian": "Asian",
+                        "native": "Native",
+                        "hispanic": "Hispanic",
+                        "nonhispanic": "Nonhispanic",
+                        "non-hispanic": "Nonhispanic",
+                    },
+                ),
             )
     if "GENDER" in df.columns:
         df = df.withColumn(
@@ -118,18 +140,13 @@ def base_patient_keys(patients: DataFrame) -> DataFrame:
     if "FIRST" in df.columns and "LAST" in df.columns:
         df = df.withColumn(
             "NAME",
-            F.initcap(
-                F.lower(
-                    collapse_whitespace(
-                        F.concat_ws(
-                            " ",
-                            F.col("FIRST").cast("string"),
-                            F.col("LAST").cast("string"),
-                        )
-                    )
-                )
+            F.concat_ws(
+                " ",
+                F.col("FIRST").cast("string"),
+                F.col("LAST").cast("string"),
             ),
         )
+        df = df.withColumn("NAME", normalize_person_name("NAME"))
     if "STATE" in df.columns:
         # Patient addresses use full state names (e.g. Massachusetts)
         df = df.withColumn(
@@ -184,7 +201,7 @@ def base_payers_keys(payers: DataFrame) -> DataFrame:
     ]
     for c in money_cols:
         if c in df.columns:
-            df = df.withColumn(c, F.col(c).cast("decimal(18,4)"))
+            df = df.withColumn(c, normalize_money_decimal(c))
     int_cols = [
         "COVERED_ENCOUNTERS",
         "UNCOVERED_ENCOUNTERS",
@@ -229,7 +246,7 @@ def base_providers_keys(providers: DataFrame) -> DataFrame:
     if "ORGANIZATION" in df.columns:
         df = df.withColumn("ORGANIZATION", normalize_key_uuid("ORGANIZATION"))
     if "NAME" in df.columns:
-        df = df.withColumn("NAME", collapse_whitespace(F.col("NAME").cast("string")))
+        df = df.withColumn("NAME", normalize_person_name("NAME"))
     if "SPECIALITY" in df.columns:
         df = df.withColumn(
             "SPECIALITY",

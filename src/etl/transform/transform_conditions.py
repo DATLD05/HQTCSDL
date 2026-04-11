@@ -2,10 +2,10 @@ from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
 from src.etl.csv_utils import (
-    collapse_whitespace,
+    normalize_code_canonical,
     normalize_key_uuid,
-    normalize_long_code,
     parse_date_any,
+    sanitize_text,
     trim_empty_to_null,
 )
 from src.etl.transform.common import filter_by_patient_life_date
@@ -66,12 +66,9 @@ def transform(
     df = df.filter(in_enc_window).drop("_e_pat", "_e_start", "_e_stop")
 
     if "CODE" in df.columns:
-        df = df.withColumn("CODE", normalize_long_code("CODE"))
+        df = df.withColumn("CODE", normalize_code_canonical("CODE"))
     if "DESCRIPTION" in df.columns:
-        df = df.withColumn(
-            "DESCRIPTION",
-            collapse_whitespace(F.col("DESCRIPTION").cast("string")),
-        )
+        df = df.withColumn("DESCRIPTION", sanitize_text("DESCRIPTION"))
 
     df = filter_by_patient_life_date(df, patient_col="PATIENT", date_col="START", patients=patients)
 

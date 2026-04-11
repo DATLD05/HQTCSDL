@@ -4,11 +4,13 @@ from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as F
 
 from src.etl.csv_utils import (
-    collapse_whitespace,
     fix_stop_after_start,
+    normalize_category_mapped,
+    normalize_code_canonical,
     normalize_key_uuid,
-    normalize_long_code,
+    normalize_money_decimal,
     parse_ts_any,
+    sanitize_text,
     trim_empty_to_null,
 )
 from src.etl.transform.common import filter_by_patient_life_ts
@@ -59,32 +61,37 @@ def transform(
     if "ENCOUNTERCLASS" in df.columns:
         df = df.withColumn(
             "ENCOUNTERCLASS",
-            F.lower(F.trim(F.col("ENCOUNTERCLASS").cast("string"))),
+            normalize_category_mapped(
+                "ENCOUNTERCLASS",
+                {
+                    "wellness": "wellness",
+                    "inpatient": "inpatient",
+                    "ambulatory": "ambulatory",
+                    "outpatient": "outpatient",
+                    "emergency": "emergency",
+                    "urgentcare": "urgentcare",
+                    "urgent_care": "urgentcare",
+                },
+            ),
         )
     if "CODE" in df.columns:
-        df = df.withColumn("CODE", normalize_long_code("CODE"))
+        df = df.withColumn("CODE", normalize_code_canonical("CODE"))
     if "DESCRIPTION" in df.columns:
-        df = df.withColumn(
-            "DESCRIPTION",
-            collapse_whitespace(F.col("DESCRIPTION").cast("string")),
-        )
+        df = df.withColumn("DESCRIPTION", sanitize_text("DESCRIPTION"))
     if "REASONDESCRIPTION" in df.columns:
-        df = df.withColumn(
-            "REASONDESCRIPTION",
-            collapse_whitespace(F.col("REASONDESCRIPTION").cast("string")),
-        )
+        df = df.withColumn("REASONDESCRIPTION", sanitize_text("REASONDESCRIPTION"))
     if "REASONCODE" in df.columns:
         df = df.withColumn(
             "REASONCODE",
             F.when(
                 F.trim(F.col("REASONCODE").cast("string")) == "",
                 F.lit(None),
-            ).otherwise(normalize_long_code("REASONCODE")),
+            ).otherwise(normalize_code_canonical("REASONCODE")),
         )
 
     for c in ("BASE_ENCOUNTER_COST", "TOTAL_CLAIM_COST", "PAYER_COVERAGE"):
         if c in df.columns:
-            df = df.withColumn(c, F.col(c).cast("decimal(18,4)"))
+            df = df.withColumn(c, normalize_money_decimal(c))
 
     df = filter_by_patient_life_ts(df, patient_col="PATIENT", ts_col="START", patients=patients)
 

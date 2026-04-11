@@ -1,7 +1,15 @@
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
-from src.etl.csv_utils import collapse_whitespace, normalize_key_uuid, parse_ts_any, trim_empty_to_null
+from src.etl.csv_utils import (
+    normalize_category_mapped,
+    normalize_code_canonical,
+    normalize_key_uuid,
+    normalize_unit_symbol,
+    parse_ts_any,
+    sanitize_text,
+    trim_empty_to_null,
+)
 from src.etl.transform.common import filter_by_patient_life_ts
 
 
@@ -40,22 +48,38 @@ def transform(
     if "CATEGORY" in df.columns:
         df = df.withColumn(
             "CATEGORY",
-            F.lower(F.trim(F.col("CATEGORY").cast("string"))),
+            normalize_category_mapped(
+                "CATEGORY",
+                {
+                    "vital-signs": "vital-signs",
+                    "vital signs": "vital-signs",
+                    "laboratory": "laboratory",
+                    "exam": "exam",
+                    "survey": "survey",
+                    "social-history": "social-history",
+                    "social history": "social-history",
+                },
+            ),
         )
     if "TYPE" in df.columns:
         df = df.withColumn(
             "TYPE",
-            F.lower(F.trim(F.col("TYPE").cast("string"))),
+            normalize_category_mapped(
+                "TYPE",
+                {
+                    "numeric": "numeric",
+                    "number": "numeric",
+                    "text": "text",
+                    "string": "text",
+                },
+            ),
         )
     if "CODE" in df.columns:
-        df = df.withColumn("CODE", F.trim(F.col("CODE").cast("string")))
+        df = df.withColumn("CODE", normalize_code_canonical("CODE"))
     if "DESCRIPTION" in df.columns:
-        df = df.withColumn(
-            "DESCRIPTION",
-            collapse_whitespace(F.col("DESCRIPTION").cast("string")),
-        )
+        df = df.withColumn("DESCRIPTION", sanitize_text("DESCRIPTION"))
     if "UNITS" in df.columns:
-        df = df.withColumn("UNITS", F.lower(F.trim(F.col("UNITS").cast("string"))))
+        df = df.withColumn("UNITS", normalize_unit_symbol("UNITS"))
 
     df = df.withColumn(
         "VALUE_NUMERIC",
