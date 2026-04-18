@@ -5,3 +5,4 @@ __pycache__/
 *.json
 .ipynb_checkpoints/
 data/output/
+gcp-key.json
