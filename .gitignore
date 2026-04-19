@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 venv/
 __pycache__/
 *.pyc
@@ -5,3 +6,15 @@ __pycache__/
 *.json
 .ipynb_checkpoints/
 data/output/
+=======
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+>>>>>>> 469fa0fdd7935968f590aa88170124490ef6f458
