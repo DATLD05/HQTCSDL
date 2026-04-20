@@ -219,8 +219,8 @@ def base_payers_keys(payers: DataFrame) -> DataFrame:
             df = df.withColumn(c, F.col(c).cast("long"))
     if "QOLS_AVG" in df.columns:
         df = df.withColumn("QOLS_AVG", F.col("QOLS_AVG").cast("double"))
-    # Keep location/phone only in raw; drop from cleaned output per requirement
-    drop_cols = ["ADDRESS", "CITY", "STATE_HEADQUARTERED", "ZIP", "PHONE"]
+    # Keep STATE_HEADQUARTERED for Dim_Payer mapping; drop other contact/location fields
+    drop_cols = ["ADDRESS", "CITY", "ZIP", "PHONE"]
     for c in drop_cols:
         if c in df.columns:
             df = df.drop(c)

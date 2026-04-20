@@ -22,7 +22,7 @@ from src.etl.paths import (
     PROVIDERS_CSV,
     cleaned_csv_path,
 )
-from src.etl.transform import transform_all
+from src.etl.transform import transform_all, transform_star
 
 _TABLE_ORDER = (
     "patients",
@@ -60,11 +60,14 @@ def run(
     raw_paths: RawCsvPaths | None = None,
     write_csv: bool = False,
     output_dir: Path | None = None,
+    write_star_csv: bool = False,
+    star_output_dir: Path | None = None,
     fail_on_integrity_error: bool = False,
 ) -> dict[str, DataFrame]:
     """
     Returns eight cleaned DataFrames keyed by table name.
     If write_csv is True, writes one CSV per table with suffix ``_cleaned.csv``.
+    If write_star_csv is True, writes 4 star-schema CSV tables with suffix ``_star.csv``.
     """
     raw = extract_all(spark, raw_paths)
     cleaned = transform_all(raw)
@@ -87,6 +90,10 @@ def run(
             raise RuntimeError(
                 "Missing cleaned CSV outputs after write: " + ", ".join(missing)
             )
+
+    if write_star_csv:
+        transform_star(cleaned, write_csv=True, output_dir=star_output_dir)
+
     return cleaned
 
 

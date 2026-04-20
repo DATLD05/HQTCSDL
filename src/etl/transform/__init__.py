@@ -7,6 +7,7 @@ from src.etl.transform.transform_patients import transform as transform_patients
 from src.etl.transform.transform_payers import transform as transform_payers
 from src.etl.transform.transform_procedures import transform as transform_procedures
 from src.etl.transform.transform_providers import transform as transform_providers
+from src.etl.transform.transform_star import transform_star
 
 __all__ = [
     "transform_all",
@@ -18,4 +19,5 @@ __all__ = [
     "transform_observations",
     "transform_procedures",
     "transform_medications",
+    "transform_star",
 ]
