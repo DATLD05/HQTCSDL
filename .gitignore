@@ -19,5 +19,3 @@ wheels/
 .venv
 >>>>>>> 469fa0fdd7935968f590aa88170124490ef6f458
 
-# Secret credentials
-.secrets/
