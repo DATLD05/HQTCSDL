@@ -1,21 +1,21 @@
-<<<<<<< HEAD
-venv/
-__pycache__/
-*.pyc
-.env
-*.json
-.ipynb_checkpoints/
-data/output/
-=======
 # Python-generated files
 __pycache__/
 *.py[oc]
 build/
 dist/
 wheels/
-*.egg-info
+*.egg-info/
 
 # Virtual environments
-.venv
->>>>>>> 469fa0fdd7935968f590aa88170124490ef6f458
+.venv/
+venv/
 
+# Environment files
+.env
+.env.*
+
+# Notebook/cache artifacts
+.ipynb_checkpoints/
+
+# Local credentials and secrets
+.credentials/
