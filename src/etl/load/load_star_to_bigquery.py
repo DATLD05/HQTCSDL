@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from google.api_core.exceptions import NotFound
 from google.cloud import bigquery
 from google.oauth2 import service_account
 
@@ -28,6 +27,120 @@ _STAR_TABLES = (
     "Fact_Conditions",
     "Fact_Medications",
 )
+
+_TABLE_SCHEMAS: dict[str, list[bigquery.SchemaField]] = {
+    "Dim_Patient": [
+        bigquery.SchemaField("Id", "STRING"),
+        bigquery.SchemaField("BirthDate", "DATE"),
+        bigquery.SchemaField("DeathDate", "DATE"),
+        bigquery.SchemaField("Gender", "STRING"),
+        bigquery.SchemaField("Race", "STRING"),
+    ],
+    "Dim_Payer": [
+        bigquery.SchemaField("Id", "STRING"),
+        bigquery.SchemaField("Name", "STRING"),
+        bigquery.SchemaField("State_Headquartered", "STRING"),
+    ],
+    "Dim_Provider": [
+        bigquery.SchemaField("Id", "STRING"),
+        bigquery.SchemaField("Name", "STRING"),
+        bigquery.SchemaField("Speciality", "STRING"),
+    ],
+    "Dim_Procedure": [
+        bigquery.SchemaField("Code", "STRING"),
+        bigquery.SchemaField("Description", "STRING"),
+        bigquery.SchemaField("Procedure_Category", "STRING"),
+        bigquery.SchemaField("Is_Top_Pareto", "BOOL"),
+    ],
+    "Dim_Diagnosis": [
+        bigquery.SchemaField("Code", "STRING"),
+        bigquery.SchemaField("Description", "STRING"),
+        bigquery.SchemaField("Diagnosis_Group", "STRING"),
+    ],
+    "Dim_Medication": [
+        bigquery.SchemaField("Code", "STRING"),
+        bigquery.SchemaField("Name", "STRING"),
+        bigquery.SchemaField("Drug_Class", "STRING"),
+        bigquery.SchemaField("Form", "STRING"),
+        bigquery.SchemaField("Strength", "STRING"),
+    ],
+    "Dim_Date": [
+        bigquery.SchemaField("Date_Key", "INT64"),
+        bigquery.SchemaField("Date", "DATE"),
+        bigquery.SchemaField("Year", "INT64"),
+        bigquery.SchemaField("Month", "INT64"),
+        bigquery.SchemaField("DayOfWeek", "STRING"),
+    ],
+    "Dim_Time": [
+        bigquery.SchemaField("Time_Key", "INT64"),
+        bigquery.SchemaField("Hour", "INT64"),
+        bigquery.SchemaField("Time_Bucket", "STRING"),
+    ],
+    "Dim_Encounter": [
+        bigquery.SchemaField("Id", "STRING"),
+        bigquery.SchemaField("EncounterClass", "STRING"),
+        bigquery.SchemaField("Age_Group", "STRING"),
+        bigquery.SchemaField("Duration_Bucket", "STRING"),
+    ],
+    "Fact_Encounter_Metrics": [
+        bigquery.SchemaField("Id", "STRING"),
+        bigquery.SchemaField("Encounter_Id", "STRING"),
+        bigquery.SchemaField("Patient_Id", "STRING"),
+        bigquery.SchemaField("Provider_Id", "STRING"),
+        bigquery.SchemaField("Payer_Id", "STRING"),
+        bigquery.SchemaField("Start_Date_Key", "INT64"),
+        bigquery.SchemaField("Start_Time_Key", "INT64"),
+        bigquery.SchemaField("Stop_Date_Key", "INT64"),
+        bigquery.SchemaField("Stop_Time_Key", "INT64"),
+        bigquery.SchemaField("Patient_Age", "INT64"),
+        bigquery.SchemaField("Duration_Minutes", "INT64"),
+        bigquery.SchemaField("Length_Of_Stay_Days", "INT64"),
+        bigquery.SchemaField("Base_Encounter_Cost", "FLOAT64"),
+        bigquery.SchemaField("Total_Claim_Cost", "FLOAT64"),
+        bigquery.SchemaField("Payer_Coverage", "FLOAT64"),
+        bigquery.SchemaField("Out_Of_Pocket_Cost", "FLOAT64"),
+        bigquery.SchemaField("Is_Admitted", "INT64"),
+        bigquery.SchemaField("Is_Readmission_30D", "INT64"),
+        bigquery.SchemaField("Is_Death_30D", "INT64"),
+    ],
+    "Fact_Procedures": [
+        bigquery.SchemaField("Id", "STRING"),
+        bigquery.SchemaField("Encounter_Id", "STRING"),
+        bigquery.SchemaField("Procedure_Code", "STRING"),
+        bigquery.SchemaField("Start_Date_Key", "INT64"),
+        bigquery.SchemaField("Start_Time_Key", "INT64"),
+        bigquery.SchemaField("Patient_Id", "STRING"),
+        bigquery.SchemaField("Provider_Id", "STRING"),
+        bigquery.SchemaField("Payer_Id", "STRING"),
+        bigquery.SchemaField("Procedure_Duration_Minutes", "INT64"),
+        bigquery.SchemaField("Base_Cost", "FLOAT64"),
+        bigquery.SchemaField("Unclaimed_Cost", "FLOAT64"),
+    ],
+    "Fact_Conditions": [
+        bigquery.SchemaField("Id", "STRING"),
+        bigquery.SchemaField("Encounter_Id", "STRING"),
+        bigquery.SchemaField("Condition_Code", "STRING"),
+        bigquery.SchemaField("Start_Date_Key", "INT64"),
+        bigquery.SchemaField("Patient_Id", "STRING"),
+        bigquery.SchemaField("Provider_Id", "STRING"),
+        bigquery.SchemaField("Payer_Id", "STRING"),
+    ],
+    "Fact_Medications": [
+        bigquery.SchemaField("Id", "STRING"),
+        bigquery.SchemaField("Encounter_Id", "STRING"),
+        bigquery.SchemaField("Medication_Code", "STRING"),
+        bigquery.SchemaField("Patient_Id", "STRING"),
+        bigquery.SchemaField("Provider_Id", "STRING"),
+        bigquery.SchemaField("Payer_Id", "STRING"),
+        bigquery.SchemaField("Start_Date_Key", "INT64"),
+        bigquery.SchemaField("End_Date_Key", "INT64"),
+        bigquery.SchemaField("Dosage", "FLOAT64"),
+        bigquery.SchemaField("Frequency", "STRING"),
+        bigquery.SchemaField("Duration_Days", "INT64"),
+        bigquery.SchemaField("Base_Cost", "FLOAT64"),
+        bigquery.SchemaField("Covered_Cost", "FLOAT64"),
+    ],
+}
 
 
 def _env_or(value: str | None, env_name: str) -> str:
@@ -63,7 +176,7 @@ def _project_id_from_service_account(credentials_path: str) -> str | None:
 
 def _default_dataset_id(project_id: str) -> str:
     normalized = project_id.replace("-", "_")
-    return f"{normalized}_dw"
+    return f"{normalized}"
 
 
 def _ensure_dataset_exists(client: bigquery.Client, project_id: str, dataset_id: str) -> None:
@@ -126,17 +239,16 @@ def run(
             raise RuntimeError(f"Missing star CSV: {csv_path}")
 
         table_id = f"{project_id}.{dataset_id}.{table_name}"
-        table_exists = True
-        try:
-            client.get_table(table_id)
-        except NotFound:
-            table_exists = False
+        schema = _TABLE_SCHEMAS.get(table_name)
+        if schema is None:
+            raise RuntimeError(f"Missing BigQuery schema mapping for table: {table_name}")
 
         job_config = bigquery.LoadJobConfig(
             source_format=bigquery.SourceFormat.CSV,
             skip_leading_rows=1,
             write_disposition=write_disposition,
-            autodetect=not table_exists,
+            autodetect=False,
+            schema=schema,
             create_disposition=bigquery.CreateDisposition.CREATE_IF_NEEDED,
         )
 
