@@ -103,10 +103,16 @@ def parse_ts_any(s_col: F.Column) -> F.Column:
 def parse_date_any(s_col: F.Column) -> F.Column:
     """Parse date-only (conditions) from M/d/yyyy or yyyy-MM-dd."""
     c = F.trim(s_col.cast("string"))
-    d1 = F.to_date(c, "M/d/yyyy")
-    d2 = F.to_date(c, "MM/dd/yyyy")
-    d3 = F.to_date(c, "yyyy-MM-dd")
-    return F.coalesce(d1, d2, d3)
+    c = F.when(c == "", F.lit(None)).otherwise(c)
+
+    # ANSI-safe parsing: use try_to_timestamp first, then cast to date.
+    # This avoids hard failures when mixed date formats appear in the same CSV.
+    ts_us = F.try_to_timestamp(F.concat(c, F.lit(" 00:00:00")), F.lit("M/d/yyyy HH:mm:ss"))
+    ts_us_2 = F.try_to_timestamp(F.concat(c, F.lit(" 00:00:00")), F.lit("MM/dd/yyyy HH:mm:ss"))
+    ts_iso = F.try_to_timestamp(F.concat(c, F.lit(" 00:00:00")), F.lit("yyyy-MM-dd HH:mm:ss"))
+    ts_default = F.try_to_timestamp(c)
+
+    return F.to_date(F.coalesce(ts_us, ts_us_2, ts_iso, ts_default))
 
 
 def normalize_long_code(column: str) -> F.Column:

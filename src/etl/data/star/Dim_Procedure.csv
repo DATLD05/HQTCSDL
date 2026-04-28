@@ -1,158 +1,19 @@
 Code,Description,Procedure_Category,Is_Top_Pareto
-10383002,Counseling for termination of pregnancy,Counseling/FollowUp,false
-104091002,Hemoglobin / Hematocrit / Platelet count,General,true
-104326007,Measurement of Varicella-zoster virus antibody,General,false
-104375008,Hepatitis C antibody test,General,false
-104435004,Screening for occult blood in feces (procedure),Assessment,false
-112790001,Nasal sinus endoscopy (procedure),General,false
-112798008,Insertion of endotracheal tube (procedure),General,false
-11466000,Cesarean section,General,false
-117010004,Urine culture,General,false
-117015009,Throat culture (procedure),General,false
-118001005,Streptococcus pneumoniae group B antigen test,General,false
-1225002,Upper arm X-ray,General,false
-122548005,Biopsy of breast (procedure),General,false
+103697008,Patient referral for dental care (procedure),General,false
+103750000,Sleep apnea assessment (procedure),Assessment,false
 127783003,Spirometry (procedure),General,false
-14768001,Peripheral blood smear interpretation,General,false
 15081005,Pulmonary rehabilitation (regime/therapy),General,false
-1571000087109,Ultrasonography of bilateral breasts (procedure),General,false
-162676008,Brief general examination (procedure),Assessment,false
-16335031000119104,High resolution computed tomography of chest without contrast (procedure),General,true
-165829005,Gonorrhea infection test,General,false
-167271000,Urine protein test,General,false
-168594001,Clavicle X-ray,General,false
-169230002,Ultrasound scan for fetal viability,General,false
-169553002,Insertion of subcutaneous contraceptive,General,false
-169673001,Antenatal RhD antibody screening,Assessment,false
-169690007,Rubella screening,Assessment,false
+170245002,Child examination: school screening (procedure),Assessment,false
 171207006,Depression screening (procedure),Assessment,false
-173160006,Diagnostic fiberoptic bronchoscopy (procedure),General,false
-180325003,Electrical cardioversion,General,true
-18286008,Catheter ablation of tissue of heart,General,false
-183418007,Social case work (regime/therapy),General,false
-185087000,Notifications (procedure),General,true
-18946005,Epidural anesthesia,General,false
-19490002,Ankle X-ray,General,false
-200619008,Comprehensive interview and evaluation (procedure),General,false
-225158009,Auscultation of the fetal heart,General,true
-22523008,Vasectomy,General,false
-225386006,Pre-discharge assessment (procedure),Assessment,false
-229064008,Movement therapy (regime/therapy),General,true
-232717009,Coronary artery bypass grafting,General,false
-23426006,Measurement of respiratory function (procedure),General,false
-236974004,Instrumental delivery,General,false
-237001001,Augmentation of labor,General,false
-241055006,Mammogram - symptomatic (procedure),General,false
-24623002,Screening mammography (procedure),Assessment,false
-252160004,Standard pregnancy test,General,false
-261352009,Face mask (physical object),General,false
-265764009,Renal dialysis (procedure),General,true
-26763009,Controlled ventilation procedure and therapy initiation and management (procedure),General,false
-268425006,Pelvis X-ray,General,false
-268556000,Urine screening for glucose,Assessment,false
-269828009,Syphilis infection test,General,false
-269911007,Sputum examination (procedure),Assessment,false
-271442007,Fetal anatomy study,General,false
-274031008,Rectal polypectomy,General,false
-274474001,Bone immobilization,General,false
-274804006,Evaluation of uterine fundal height,General,true
-275833003,Alpha-fetoprotein test,General,false
-28163009,Skin test for tuberculosis,General,false
-287664005,Bilateral tubal ligation,General,false
-288086009,Suture open wound,General,false
-29303009,Electrocardiographic procedure,General,false
-301807007,Removal of subcutaneous contraceptive,General,false
-305351004,Admit to ICU (procedure),General,false
-305428000,Admission to orthopedic department,General,false
-310417005,Certification procedure (procedure),General,true
-310861008,Chlamydia antigen test,General,false
-311555007,Speech and language therapy regime (regime/therapy,General,false
-311791003,Information gathering (procedure),General,false
-31208007,Medical induction of labor,General,false
-312681000,Bone density scan (procedure),General,true
-315639002,Initial patient assessment (procedure),Assessment,true
-31676001,Human immunodeficiency virus antigen test,General,false
-33195004,Teleradiotherapy procedure (procedure),General,true
-35025007,Manual pelvic examination (procedure),Assessment,false
-367336001,Chemotherapy (procedure),General,false
-370789001,Development of individualized plan of care (procedure),General,true
-371908008,Oxygen administration by mask (procedure),General,false
-384700001,Injection of tetanus antitoxin,General,false
-385763009,Hospice care (regime/therapy),General,true
-385781007,Home health aide service (regime/therapy),General,false
-386394001,Pregnancy termination care,General,false
-392091000,Care regimes assessment (procedure),Assessment,false
-395123002,Urine screening test for diabetes,Assessment,false
-396487001,Sentinel lymph node biopsy (procedure),General,false
-398171003,Hearing examination (procedure),Assessment,true
-399014008,Vaccination for diphtheria pertussis and tetanus,General,false
-399208008,Chest X-ray,General,false
-40701008,Echocardiography (procedure),General,true
-409023009,Professional / ancillary services care (regime/therapy),General,false
-410006001,Digital examination of rectum,Assessment,false
-410401003,Nursing care/supplementary surveillance (regime/therapy),General,true
-415070008,Percutaneous coronary intervention,General,false
-415300000,Review of systems (procedure),General,false
-417511005,Referral to home health care service (procedure),General,false
-418891003,Computed tomography of chest and abdomen,General,false
-423475008,Heart failure education (procedure),Counseling/FollowUp,false
-426701000119108,Ultrasonography of abdomen right upper quadrant and epigastrium,General,false
+180325003,Direct current cardioversion (procedure),General,false
+18286008,Catheter ablation of tissue of heart (procedure),General,false
+308481009,Referral to orthopedic surgeon (procedure),General,false
+312681000,Bone density scan (procedure),General,false
 428211000124100,Assessment of substance use (procedure),Assessment,false
-430193006,Medication Reconciliation (procedure),General,true
-430701006,Resuscitation using intravenous fluid (procedure),General,false
-43075005,Partial resection of colon,General,false
-431182000,Placing subject in prone position (procedure),General,false
-432231006,Fine needle aspiration biopsy of lung (procedure),General,false
-433112001,Percutaneous mechanical thrombectomy of portal vein using fluoroscopic guidance,General,false
-433114000,Human epidermal growth factor receptor 2 gene detection by immunohistochemistry (procedure),General,false
-434363004,Human epidermal growth factor receptor 2 gene detection by fluorescence in situ hybridization (procedure),General,false
-443497002,Excision of sentinel lymph node (procedure),General,false
-443529005,Screening for chromosomal aneuploidy in prenatal amniotic fluid,Assessment,false
-44608003,Blood typing RH typing,General,false
-447365002,Insertion of biventricular implantable cardioverter defibrillator,Intervention,false
-449214001,Transfer to stepdown unit (procedure),General,false
-449381000124108,Discharge from skilled nursing facility (procedure),General,false
-454711000124102,Depression screening using Patient Health Questionnaire Two-Item score (procedure),Assessment,false
-45595009,Laparoscopic Removal of Gall Bladder,General,false
-46706006,Replacement of contraceptive intrauterine device,General,false
-47758006,Hepatitis B Surface Antigen Measurement,General,false
-51116004,RhD passive immunization,General,false
-52734007,Total replacement of hip,General,false
-52765003,Intubation,General,false
-54550000,Seizure Count Cerebral Cortex Electroencephalogram (EEG),General,false
-58000006,Patient discharge (procedure),General,false
-5880005,Physical examination following birth,Assessment,true
-60027007,X-ray or wrist,General,false
-63332003,History AND physical examination (procedure),Assessment,false
-65200003,Insertion of intrauterine contraceptive device,General,false
-65546002,Extraction of wisdom tooth,Intervention,false
-65575008,Biopsy of prostate,General,false
-65588006,Premature birth of newborn,General,false
-66348005,Childbirth,General,false
-68254000,Removal of intrauterine device,General,false
-69031006,Excision of breast tissue (procedure),General,false
-698354004,Magnetic resonance imaging for measurement of brain volume (procedure),General,false
-699253003,Surgical manipulation of joint of knee,General,false
-703423002,Combined chemotherapy and radiation therapy (procedure),General,true
+430193006,Medication reconciliation (procedure),General,true
 710824005,Assessment of health and social care needs (procedure),Assessment,true
-710841007,Assessment of anxiety (procedure),Assessment,false
-711069006,Coordination of care plan (procedure),General,false
-713106006,Screening for drug abuse (procedure),Assessment,false
-714812005,Induced termination of pregnancy,General,false
+710841007,Assessment of anxiety (procedure),Assessment,true
 715252007,Depression screening using Patient Health Questionnaire Nine Item score (procedure),Assessment,false
-71651007,Mammography (procedure),General,true
-73761001,Colonoscopy,General,true
-74016001,Knee X-ray,General,false
-76164006,Biopsy of colon,General,false
-762998009,Assessment using New York Heart Association Classification (procedure),Assessment,false
-763302001,Assessment using Alcohol Use Disorders Identification Test - Consumption (procedure),Assessment,false
-76601001,Intramuscular injection,General,true
-76746007,Cardiovascular stress testing (procedure),General,false
-80146002,Appendectomy,General,false
-84478008,Occupational therapy (regime/therapy),General,false
-85548006,Episiotomy,General,false
+762993000,Assessment using Morse Fall Scale (procedure),Assessment,false
 866148006,Screening for domestic abuse (procedure),Assessment,false
-88039007,Transplant of lung (procedure),General,false
-90226004,Cytopathology procedure preparation of smear genital source (procedure),General,false
-90470006,Prostatectomy,General,false
-91251008,Physical therapy procedure (regime/therapy),General,true
+868187001,Assessment using Car Relax Alone Forget Friends Trouble Screening Test (procedure),Assessment,false

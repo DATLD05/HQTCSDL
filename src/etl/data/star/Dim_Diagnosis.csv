@@ -1,132 +1,48 @@
 Code,Description,Diagnosis_Group
-10509002,Acute bronchitis (disorder),General
 105531004,Housing unsatisfactory (finding),General
-10939900000000000,Unhealthy alcohol drinking behavior (finding),General
-109838007,Overlapping malignant neoplasm of colon,General
-1121000000000,Chronic neck pain (finding),General
-124171000000000,Chronic intractable migraine without aura,General
-126906006,Neoplasm of prostate,General
-128613002,Seizure disorder,General
-1501000000000,Proliferative diabetic retinopathy due to type II diabetes mellitus (disorder),Diabetes
-1551000000000,Nonproliferative diabetic retinopathy due to type 2 diabetes mellitus (disorder),Diabetes
-156073000,Fetus with unknown complication,General
-15777000,Prediabetes,Diabetes
+10939881000119104,Unhealthy alcohol drinking behavior (finding),General
+1187604002,Serving in military service (finding),General
+127013003,Disorder of kidney due to diabetes mellitus (disorder),Diabetes
+157141000119108,Proteinuria due to type 2 diabetes mellitus (disorder),Diabetes
 160903007,Full-time employment (finding),General
 160904001,Part-time employment (finding),General
 160968000,Risk activity involvement (finding),General
-16114001,Fracture of ankle,General
-162573006,Suspected lung cancer (situation),General
 162864005,Body mass index 30+ - obesity (finding),General
-19169002,Miscarriage in first trimester,General
-195662009,Acute viral pharyngitis (disorder),General
-196416002,Impacted molars,General
-197927001,Recurrent urinary tract infection,General
-198992004,Antepartum eclampsia,General
-201834006,Localized primary osteoarthritis of the hand,General
-203082005,Fibromyalgia (disorder),General
+185086009,Chronic obstructive bronchitis (disorder),General
 224295006,Only received primary school education (finding),General
 224299000,Received higher education (finding),General
-224355006,Served in armed forces (finding),General
-230265002,Familial Alzheimer's disease of early onset (disorder),General
-230690007,Stroke,General
-233604007,Pneumonia,General
-236077008,Protracted diarrhea,General
 237602007,Metabolic syndrome X (disorder),General
-239872002,Osteoarthritis of hip,General
-239873007,Osteoarthritis of knee,General
-24079001,Atopic dermatitis,General
-248595008,Sputum finding (finding),General
-249497008,Vomiting symptom (finding),General
-254837009,Malignant neoplasm of breast (disorder),General
-266934004,Transport problems (finding),General
+266934004,Transport problem (finding),General
 266948004,Has a criminal record (finding),General
-267036007,Dyspnea (finding),General
 26929004,Alzheimer's disease (disorder),General
 271737000,Anemia (disorder),General
-271825005,Respiratory distress (finding),General
-275272006,Brain damage - traumatic,General
-278860009,Chronic low back pain (finding),General
-283371005,Laceration of forearm,General
-283385000,Laceration of thigh,General
-284549007,Laceration of hand,General
-284551006,Laceration of foot,General
-301011002,Escherichia coli urinary tract infection,General
 302870006,Hypertriglyceridemia (disorder),General
-307731004,Injury of tendon of the rotator cuff of shoulder,General
-314994000,Metastasis from malignant tumor of prostate (disorder),General
-33737001,Fracture of rib,General
-359817006,Closed fracture of hip,General
+314529007,Medication review due (situation),General
 361055000,Misuses drugs (finding),General
-368581000000000,Neuropathy due to type 2 diabetes mellitus (disorder),Diabetes
-36955009,Loss of taste (finding),General
-36971009,Sinusitis (disorder),General
-370247008,Facial laceration,General
-386661006,Fever (finding),General
-389087006,Hypoxemia (disorder),General
-398254007,Preeclampsia,General
-39848009,Whiplash injury to neck,General
-40055000,Chronic sinusitis (disorder),General
-403191005,Second degree burn,General
-422034002,Diabetic retinopathy associated with type II diabetes mellitus (disorder),Diabetes
-422587007,Nausea (finding),General
+368581000119106,Neuropathy due to type 2 diabetes mellitus (disorder),Diabetes
+408512008,Body mass index 40+ - severely obese (finding),General
+414545008,Ischemic heart disease (disorder),General
 422650009,Social isolation (finding),General
 423315002,Limited social contact (finding),General
-424132000,Non-small cell carcinoma of lung TNM stage 1 (disorder),General
 424393004,Reports of violence in the environment (finding),General
-427419006,Transformed migraine (disorder),General
-428251008,History of appendectomy,General
-43724002,Chill (finding),General
-43878008,Streptococcal sore throat (disorder),General
-44054006,Diabetes,Diabetes
-443165006,Pathological fracture due to osteoporosis (disorder),General
-444448004,Injury of medial collateral ligament of knee,General
-44465007,Sprain of ankle,General
-444814009,Viral sinusitis (disorder),General
+431855005,Chronic kidney disease stage 1 (disorder),General
+431856006,Chronic kidney disease stage 2 (disorder),General
+431857002,Chronic kidney disease stage 4 (disorder),General
+433144002,Chronic kidney disease stage 3 (disorder),General
+44054006,Diabetes mellitus type 2 (disorder),Diabetes
 446654005,Refugee (person),General
-49436004,Atrial Fibrillation,General
-49727002,Cough (finding),General
-5251000000000,Received certificate of high school equivalency (finding),General
-53741008,Coronary Heart Disease,General
-55680006,Drug overdose,General
-55822004,Hyperlipidemia,General
-56018004,Wheezing (finding),General
-57676002,Joint pain (finding),General
-58150001,Fracture of clavicle,General
-59621000,Hypertension,Cardiovascular
-6072007,Bleeding from anus,General
-62106007,Concussion with no loss of consciousness,General
-62564004,Concussion with loss of consciousness,General
+473461003,Educated to high school level (finding),General
+49436004,Atrial fibrillation (disorder),General
+55822004,Hyperlipidemia (disorder),General
+59621000,Essential hypertension (disorder),Cardiovascular
 64859006,Osteoporosis (disorder),General
-65363002,Otitis media,General
-65966004,Fracture of forearm,General
-67782005,Acute respiratory distress syndrome (disorder),General
-68496003,Polyp of colon,General
-68962001,Muscle pain (finding),General
-69896004,Rheumatoid arthritis,General
-703151001,History of single seizure (situation),General
+66383009,Gingivitis (disorder),General
 706893006,Victim of intimate partner abuse (finding),General
-70704007,Sprain of wrist,General
-713197008,Recurrent rectal polyp,General
 713458007,Lack of access to transportation (finding),General
-72892002,Normal pregnancy,Pregnancy
+714628002,Prediabetes (finding),Diabetes
 73438004,Unemployed (finding),General
 73595000,Stress (finding),General
 741062008,Not in labor force (finding),General
-74400008,Appendicitis,General
-75498004,Acute bacterial sinusitis (disorder),General
-79586000,Tubal pregnancy,Pregnancy
 80394007,Hyperglycemia (disorder),General
-80583007,Severe anxiety (panic) (finding,General
-82423001,Chronic pain,General
-83664006,Idiopathic atrophic hypothyroidism,General
-840539006,COVID-19,General
-840544004,Suspected COVID-19,General
-84229001,Fatigue (finding),General
-84757009,Epilepsy,General
-87433001,Pulmonary emphysema (disorder),General
-88805009,Chronic congestive heart failure (disorder),General
-90560007,Gout,General
-91302008,Sepsis (disorder),General
-92691004,Carcinoma in situ of prostate (disorder),General
-93761005,Primary malignant neoplasm of colon,General
-97331000000000,Macular edema and retinopathy due to type 2 diabetes mellitus (disorder),Diabetes
+80583007,Severe anxiety (panic) (finding),General
+90781000119102,Microalbuminuria due to type 2 diabetes mellitus (disorder),Diabetes
