@@ -9,9 +9,20 @@ load_dotenv()
 def get_jdbc_url() -> str:
     """Tạo chuỗi kết nối JDBC từ biến môi trường."""
     host = os.environ.get("DB_HOST", "localhost")
-    port = os.environ.get("DB_PORT", "1433")
+    port = os.environ.get("DB_PORT", "")
     db_name = os.environ.get("DB_NAME", "")
-    return f"jdbc:sqlserver://{host}:{port};databaseName={db_name};encrypt=true;trustServerCertificate=true;"
+    instance = os.environ.get("DB_INSTANCE", "")
+    
+    # Nếu có port thì dùng port, không thì dùng host mặc định
+    base_host = f"{host}:{port}" if port else host
+    
+    url = f"jdbc:sqlserver://{base_host};databaseName={db_name};encrypt=true;trustServerCertificate=true;"
+    
+    # Bổ sung Named Instance nếu có (ví dụ: SQLEXPRESS)
+    if instance:
+        url += f"instanceName={instance};"
+        
+    return url
 
 def get_jdbc_properties() -> dict:
     """Lấy thông tin đăng nhập JDBC từ biến môi trường."""
