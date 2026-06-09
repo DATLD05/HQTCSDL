@@ -1,56 +1,120 @@
 # HQTCSDL - Healthcare ETL Data Warehouse
 
-Dự án này xây dựng pipeline ETL cho dữ liệu hồ sơ bệnh án/bệnh viện. Pipeline đọc dữ liệu nguồn, làm sạch bằng PySpark, chuyển đổi sang mô hình star schema và có thể nạp kết quả lên BigQuery.
+Dự án này xây dựng pipeline ETL cho dữ liệu hồ sơ bệnh án/bệnh viện. Pipeline đọc dữ liệu nguồn, làm sạch bằng PySpark, chuyển đổi sang mô hình star schema, sau đó nạp dữ liệu lên Google BigQuery.
 
-Luồng tổng quát:
+Nguyên tắc thiết kế hiện tại:
+
+```text
+warehouse/ddl  -> tạo dataset và bảng trên BigQuery
+src/etl/load   -> chỉ nạp dữ liệu CSV vào bảng đã tồn tại
+```
+
+Vì vậy, phần `load` không còn chịu trách nhiệm tạo bảng. Nếu dataset hoặc table chưa tồn tại trên BigQuery, bước load sẽ báo lỗi và yêu cầu chạy DDL trong `warehouse` trước.
+
+## Luồng Xử Lý
 
 ```text
 raw CSV / SQL Server
 -> extract
 -> clean
 -> transform star schema
--> write CSV
--> optional load to BigQuery
+-> ghi star CSV
+-> warehouse tạo bảng BigQuery
+-> load star CSV vào bảng BigQuery đã có sẵn
+```
+
+Thứ tự chạy khuyến nghị:
+
+```text
+1. Cài môi trường Python
+2. Cấu hình .env và credential Google Cloud
+3. Chạy warehouse/scripts/main.py để tạo dataset và bảng BigQuery
+4. Chạy ETL để tạo dữ liệu star CSV
+5. Chạy load để nạp CSV vào các bảng đã tạo
 ```
 
 ## Mục Tiêu
 
 - Chuẩn hóa dữ liệu y tế từ nhiều bảng nguồn.
-- Loại bỏ bản ghi sai quan hệ hoặc sai thời gian nghiệp vụ.
-- Tạo các bảng dimension và fact phục vụ phân tích.
-- Xuất dữ liệu star schema ra CSV.
-- Hỗ trợ load dữ liệu star schema lên Google BigQuery.
+- Làm sạch dữ liệu bằng PySpark.
+- Tạo dữ liệu đầu ra theo mô hình star schema.
+- Tạo bảng BigQuery bằng SQL DDL trong thư mục `warehouse`.
+- Nạp dữ liệu star CSV lên BigQuery sau khi bảng đã được tạo.
+- Tách rõ phần thiết kế kho dữ liệu và phần nạp dữ liệu.
 
 ## Cấu Trúc Dự Án
 
 ```text
 .
 ├── main.py                         # Script kiểm tra Spark đơn giản
-├── pyproject.toml                  # Cấu hình project và toàn bộ dependency
+├── pyproject.toml                  # Cấu hình project và dependency chính
 ├── requirements.txt                # File tương thích, trỏ về pyproject.toml
+├── .env.example                    # Mẫu biến môi trường
 ├── src/etl/
 │   ├── paths.py                    # Đường dẫn dữ liệu raw/clean/star
-│   ├── csv_utils.py                # Helper đọc/ghi CSV và chuẩn hóa dữ liệu
+│   ├── csv_utils.py                # Helper đọc/ghi CSV
 │   ├── extract/                    # Đọc dữ liệu từ CSV hoặc SQL Server
-│   ├── clean/                      # Làm sạch và kiểm tra dữ liệu
+│   ├── clean/                      # Làm sạch dữ liệu
 │   ├── transform/                  # Tạo star schema
-│   ├── load/                       # Load star CSV lên BigQuery
+│   ├── load/                       # Chỉ load star CSV lên BigQuery
 │   ├── pipelines/pipeline_all.py   # Pipeline ETL end-to-end
 │   ├── integrity_audit.py          # Helper audit ràng buộc dữ liệu
 │   ├── data/raw/                   # Dữ liệu nguồn
 │   ├── data/clean/                 # Dữ liệu sau clean
 │   └── data/star/                  # Dữ liệu star schema
 └── warehouse/
-    ├── ddl/dimensions/             # DDL tạo bảng dimension trên BigQuery
-    ├── ddl/facts/                  # DDL tạo bảng fact trên BigQuery
-    └── scripts/main.py             # Script chạy DDL BigQuery
+    ├── ddl/
+    │   ├── dimensions/             # SQL tạo bảng dimension
+    │   └── facts/                  # SQL tạo bảng fact
+    └── scripts/
+        └── main.py                 # Script chạy toàn bộ DDL lên BigQuery
 ```
+
+## Cấu Trúc Warehouse
+
+```text
+warehouse/
+├── ddl/
+│   ├── dimensions/
+│   │   ├── 01_dim_patient.sql
+│   │   ├── 02_dim_payer.sql
+│   │   ├── 03_dim_provider.sql
+│   │   ├── 04_dim_procedure.sql
+│   │   ├── 05_dim_diagnosis.sql
+│   │   ├── 06_dim_medication.sql
+│   │   ├── 07_dim_date.sql
+│   │   ├── 08_dim_time.sql
+│   │   └── 09_dim_encounter.sql
+│   └── facts/
+│       ├── 01_fact_encounter_metrics.sql
+│       ├── 02_fact_procedures.sql
+│       ├── 03_fact_conditions.sql
+│       └── 04_fact_medications.sql
+└── scripts/
+    └── main.py
+```
+
+Vai trò của `warehouse`:
+
+- Chứa toàn bộ SQL DDL tạo bảng BigQuery.
+- Tạo các bảng dimension và fact theo đúng schema.
+- Cấu hình partitioning và clustering cho bảng fact.
+- Là nơi quản lý cấu trúc kho dữ liệu.
+
+Vai trò của `src/etl/load`:
+
+- Đọc các file CSV trong `src/etl/data/star/`.
+- Kiểm tra dataset và table đã tồn tại trên BigQuery.
+- Load dữ liệu vào bảng có sẵn.
+- Không tạo dataset.
+- Không tạo table.
+- Không định nghĩa schema bảng BigQuery.
 
 ## Yêu Cầu Môi Trường
 
 Dự án yêu cầu Python `>=3.10,<3.12`. Nên dùng Python 3.10 hoặc 3.11.
 
-PySpark cũng cần Java được cài sẵn. Nếu Spark không khởi động được, hãy kiểm tra:
+PySpark cần Java. Kiểm tra nhanh:
 
 ```bash
 java -version
@@ -59,7 +123,7 @@ python --version
 
 ## Cài Đặt
 
-Từ thư mục dự án:
+Từ thư mục chứa project:
 
 ```bash
 cd HQTCSDL
@@ -78,9 +142,39 @@ Cài dependency:
 pip install -e .
 ```
 
-Nếu máy không có `python3.10`, có thể dùng `python3.11`. Không nên dùng Python 3.12 vì project đang khai báo `<3.12`.
+Toàn bộ dependency chính nằm trong `pyproject.toml`. File `requirements.txt` chỉ giữ để tương thích với workflow cũ.
 
-Toàn bộ dependency chính được khai báo trong `pyproject.toml`. File `requirements.txt` chỉ được giữ để tương thích với workflow cũ; nếu chạy `pip install -r requirements.txt` thì pip cũng sẽ cài project thông qua `-e .`.
+Nếu vẫn muốn cài bằng `requirements.txt`:
+
+```bash
+pip install -r requirements.txt
+```
+
+## Cấu Hình BigQuery
+
+Tạo file `.env` từ file mẫu:
+
+```bash
+cp .env.example .env
+```
+
+Nội dung `.env` cần có:
+
+```env
+PROJECT_ID=your-gcp-project-id
+DATASET_ID=healthcare_core
+BIGQUERY_LOCATION=US
+GOOGLE_APPLICATION_CREDENTIALS=.credentials/gcp/bigquery-loader.sa.dev.json
+```
+
+Ý nghĩa:
+
+- `PROJECT_ID`: ID project trên Google Cloud.
+- `DATASET_ID`: tên dataset BigQuery.
+- `BIGQUERY_LOCATION`: vùng tạo dataset, ví dụ `US`.
+- `GOOGLE_APPLICATION_CREDENTIALS`: đường dẫn tới file JSON service account.
+
+Không commit file `.env` hoặc credential thật lên GitHub.
 
 ## Dữ Liệu Đầu Vào
 
@@ -97,9 +191,19 @@ procedures.csv
 medications.csv
 ```
 
-Các file này được đọc qua `src/etl/extract/extract_all.py`.
+Các file này được đọc qua:
 
-Ngoài CSV, dự án có module đọc SQL Server ở `src/etl/extract/extract_db.py`. Module này dùng các biến môi trường:
+```text
+src/etl/extract/extract_all.py
+```
+
+Dự án cũng có module đọc SQL Server:
+
+```text
+src/etl/extract/extract_db.py
+```
+
+Module SQL Server dùng các biến môi trường:
 
 ```env
 DB_HOST=
@@ -110,45 +214,7 @@ DB_USER=
 DB_PASSWORD=
 ```
 
-Lưu ý: extract SQL Server hiện chưa được nối vào pipeline mặc định. Pipeline mặc định vẫn dùng CSV.
-
-## Chạy ETL Local
-
-Lệnh dưới đây chạy pipeline local, ghi lại dữ liệu clean và star CSV, không load lên BigQuery:
-
-```bash
-python - <<'PY'
-from pyspark.sql import SparkSession
-from src.etl.pipelines.pipeline_all import run
-
-spark = (
-    SparkSession.builder
-    .appName("ETL_All_Local")
-    .master("local[*]")
-    .getOrCreate()
-)
-spark.sparkContext.setLogLevel("ERROR")
-
-try:
-    run(
-        spark,
-        write_csv=True,
-        write_star_csv=True,
-        load_to_cloud=False,
-    )
-finally:
-    spark.stop()
-PY
-```
-
-Kết quả được ghi vào:
-
-```text
-src/etl/data/clean/
-src/etl/data/star/
-```
-
-Không nên chạy trực tiếp `python src/etl/pipelines/pipeline_all.py` nếu chưa cấu hình BigQuery, vì phần `__main__` hiện đang gọi `load_to_cloud=True`.
+Hiện tại pipeline mặc định vẫn dùng CSV.
 
 ## Star Schema Đầu Ra
 
@@ -175,24 +241,78 @@ Fact_Conditions
 Fact_Medications
 ```
 
-Ý nghĩa chính:
+Các file CSV tương ứng được ghi vào:
 
-- `Fact_Encounter_Metrics`: chỉ số lượt khám, chi phí, tuổi bệnh nhân, readmission 30 ngày, death 30 ngày.
-- `Fact_Procedures`: chi tiết thủ thuật theo encounter, patient, provider, payer.
-- `Fact_Conditions`: chẩn đoán/bệnh theo encounter.
-- `Fact_Medications`: thuốc, thời gian dùng thuốc và chi phí.
-
-## Load Lên BigQuery
-
-Tạo file `.env` ở thư mục project:
-
-```env
-PROJECT_ID=your-gcp-project
-DATASET_ID=healthcare_core
-GOOGLE_APPLICATION_CREDENTIALS=.credentials/gcp/bigquery-loader.sa.dev.json
+```text
+src/etl/data/star/
 ```
 
-Sau đó chạy pipeline với `load_to_cloud=True`:
+## Bước 1: Tạo Bảng BigQuery Bằng Warehouse
+
+Chạy script DDL:
+
+```bash
+python warehouse/scripts/main.py
+```
+
+Script này sẽ:
+
+- Đọc biến môi trường từ `.env`.
+- Kết nối BigQuery bằng service account.
+- Tạo dataset nếu chưa có.
+- Chạy DDL trong `warehouse/ddl/dimensions/`.
+- Chạy DDL trong `warehouse/ddl/facts/`.
+
+Các file DDL dùng placeholder:
+
+```text
+{PROJECT_ID}
+{DATASET_ID}
+```
+
+Khi chạy, `warehouse/scripts/main.py` sẽ tự thay bằng giá trị trong `.env`.
+
+Lưu ý: DDL đang dùng `CREATE TABLE IF NOT EXISTS`. Nếu bảng đã tồn tại, BigQuery sẽ không tự thay đổi schema cũ. Nếu muốn đổi cấu trúc bảng đã có, cần dùng `ALTER TABLE`, `CREATE OR REPLACE TABLE`, hoặc xóa bảng rồi tạo lại tùy yêu cầu.
+
+## Bước 2: Chạy ETL Local Để Tạo Star CSV
+
+Lệnh dưới đây chạy ETL local, ghi dữ liệu clean và star CSV, chưa load lên BigQuery:
+
+```bash
+python - <<'PY'
+from pyspark.sql import SparkSession
+from src.etl.pipelines.pipeline_all import run
+
+spark = (
+    SparkSession.builder
+    .appName("ETL_All_Local")
+    .master("local[*]")
+    .getOrCreate()
+)
+spark.sparkContext.setLogLevel("ERROR")
+
+try:
+    run(
+        spark,
+        write_csv=True,
+        write_star_csv=True,
+        load_to_cloud=False,
+    )
+finally:
+    spark.stop()
+PY
+```
+
+Kết quả:
+
+```text
+src/etl/data/clean/
+src/etl/data/star/
+```
+
+## Bước 3: Load Dữ Liệu Lên BigQuery
+
+Sau khi đã tạo bảng bằng `warehouse`, có thể load dữ liệu bằng pipeline:
 
 ```bash
 python - <<'PY'
@@ -219,24 +339,77 @@ finally:
 PY
 ```
 
-Module load chính là `src/etl/load/load_star_to_bigquery.py`. Module này load các CSV trong `src/etl/data/star/` lên BigQuery với schema được định nghĩa trong Python.
-
-## Chạy DDL BigQuery
-
-DDL nằm trong:
-
-```text
-warehouse/ddl/dimensions/
-warehouse/ddl/facts/
-```
-
-Script chạy DDL:
+Hoặc nếu đã có sẵn CSV trong `src/etl/data/star/`, chỉ chạy riêng phần load:
 
 ```bash
-python warehouse/scripts/main.py
+python - <<'PY'
+from src.etl.load import load_star_to_bigquery
+
+load_star_to_bigquery()
+PY
 ```
 
-Lưu ý: các file DDL hiện đang hard-code project/dataset trong câu `CREATE TABLE`. Nếu muốn dùng project khác, cần chỉnh lại DDL hoặc cập nhật script để thay thế project/dataset đúng cách.
+Phần load hiện tại:
+
+- Không tạo dataset.
+- Không tạo table.
+- Không dùng schema Python để tạo bảng.
+- Chỉ nạp CSV vào bảng đã tồn tại.
+- Dùng schema thật của bảng BigQuery đã tạo bởi `warehouse/ddl`.
+
+Mặc định load dùng:
+
+```text
+WRITE_TRUNCATE
+```
+
+Nghĩa là mỗi lần load sẽ ghi đè dữ liệu trong bảng đích. Nếu muốn append dữ liệu:
+
+```bash
+python - <<'PY'
+from src.etl.load import load_star_to_bigquery
+
+load_star_to_bigquery(write_disposition="WRITE_APPEND")
+PY
+```
+
+## Load Và Warehouse Khác Nhau Như Thế Nào
+
+```text
+warehouse/ddl
+```
+
+- Là nơi thiết kế cấu trúc bảng.
+- Có SQL `CREATE TABLE`.
+- Có kiểu dữ liệu, ràng buộc `NOT NULL`, description.
+- Có partitioning và clustering cho bảng fact.
+- Chạy trước khi load dữ liệu.
+
+```text
+src/etl/load
+```
+
+- Là nơi nạp dữ liệu.
+- Không chứa logic tạo bảng.
+- Không quyết định schema bảng.
+- Không tạo bảng nếu bảng chưa có.
+- Nếu thiếu bảng, chương trình báo lỗi.
+
+## Tối Ưu Chi Phí BigQuery
+
+Các bảng fact trong `warehouse/ddl/facts/` đã được thiết kế để giảm chi phí query:
+
+- Partition theo `Start_Date_Key`.
+- Cluster theo các cột thường dùng để lọc hoặc join như `Patient_Id`, `Provider_Id`, `Payer_Id`, `Procedure_Code`, `Condition_Code`, `Medication_Code`.
+- Bật `require_partition_filter = TRUE` để hạn chế query quét toàn bộ bảng fact.
+
+Khi query bảng fact, nên luôn lọc theo khoảng thời gian:
+
+```sql
+WHERE Start_Date_Key BETWEEN 20240101 AND 20241231
+```
+
+Nếu không có điều kiện partition, BigQuery có thể từ chối query do bảng fact đang bật `require_partition_filter`.
 
 ## Kiểm Tra Nhanh
 
@@ -246,7 +419,7 @@ Kiểm tra cú pháp Python:
 python -m compileall src main.py warehouse/scripts/main.py
 ```
 
-Kiểm tra dữ liệu star CSV bằng Python thường:
+Kiểm tra số dòng star CSV:
 
 ```bash
 python - <<'PY'
@@ -260,9 +433,41 @@ for path in sorted(Path("src/etl/data/star").glob("*.csv")):
 PY
 ```
 
+## Lỗi Thường Gặp
+
+Nếu load báo lỗi dataset không tồn tại:
+
+```text
+BigQuery dataset does not exist
+```
+
+Hãy chạy:
+
+```bash
+python warehouse/scripts/main.py
+```
+
+Nếu load báo lỗi table không tồn tại:
+
+```text
+BigQuery table does not exist
+```
+
+Nghĩa là bảng chưa được tạo trong BigQuery. Cần kiểm tra lại file DDL trong `warehouse/ddl` và chạy lại script warehouse.
+
+Nếu pipeline chạy trực tiếp bằng lệnh dưới đây:
+
+```bash
+python src/etl/pipelines/pipeline_all.py
+```
+
+thì phần `__main__` đang gọi `load_to_cloud=True`. Vì vậy cần cấu hình BigQuery và tạo bảng trước, hoặc nên dùng lệnh Python ở trên để chủ động đặt `load_to_cloud=False` khi chỉ muốn chạy local.
+
 ## Ghi Chú Quan Trọng
 
-- `README.md` này mô tả pipeline hiện tại trong `src/etl`.
-- Dependency chính đã được gom về `pyproject.toml`; `requirements.txt` chỉ là file tương thích.
-- Dữ liệu `procedures` sau clean có thể giảm mạnh do rule lọc theo encounter window và quan hệ patient/encounter. Khi làm báo cáo, nên giải thích rõ logic này.
-- Không commit file credential thật. Thư mục `.credentials/` đã nằm trong `.gitignore`.
+- `warehouse` là nơi tạo bảng BigQuery.
+- `load` chỉ nạp dữ liệu vào bảng có sẵn.
+- Muốn thay đổi schema BigQuery thì sửa SQL trong `warehouse/ddl`.
+- Không commit credential thật.
+- `.env` là file cấu hình local, không nên push lên GitHub.
+- `.env.example` là file mẫu an toàn để push.

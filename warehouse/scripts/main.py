@@ -1,21 +1,42 @@
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
 from google.cloud import bigquery
 from google.oauth2 import service_account
-import glob
-from dotenv import load_dotenv
-import os
 
-load_dotenv()
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+WAREHOUSE_DIR = PROJECT_ROOT / "warehouse"
+DDL_DIR = WAREHOUSE_DIR / "ddl"
 
-# ===== CONFIG =====
-PROJECT_ID = os.getenv("PROJECT_ID")
-DATASET_ID = os.getenv("DATASET_ID")
-CREDENTIAL_PATH = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+load_dotenv(PROJECT_ROOT / ".env")
 
 
-# ===== INIT CLIENT =====
+def required_env(name: str) -> str:
+    value = os.getenv(name)
+    if not value:
+        raise RuntimeError(f"Missing required environment variable: {name}")
+    return value
+
+
+PROJECT_ID = required_env("PROJECT_ID")
+DATASET_ID = required_env("DATASET_ID")
+CREDENTIAL_PATH = required_env("GOOGLE_APPLICATION_CREDENTIALS")
+BIGQUERY_LOCATION = os.getenv("BIGQUERY_LOCATION", "US")
+
+
 def get_client():
+    credentials_path = Path(CREDENTIAL_PATH)
+    if not credentials_path.is_absolute():
+        credentials_path = PROJECT_ROOT / credentials_path
+    if not credentials_path.exists():
+        raise RuntimeError(
+            "Missing service-account key file. "
+            "Set GOOGLE_APPLICATION_CREDENTIALS in .env."
+        )
+
     credentials = service_account.Credentials.from_service_account_file(
-        CREDENTIAL_PATH
+        str(credentials_path)
     )
     return bigquery.Client(
         credentials=credentials,
@@ -23,7 +44,6 @@ def get_client():
     )
 
 
-# ===== CREATE DATASET IF NOT EXISTS =====
 def create_dataset_if_not_exists(client):
     dataset_ref = f"{PROJECT_ID}.{DATASET_ID}"
 
@@ -32,52 +52,50 @@ def create_dataset_if_not_exists(client):
         print(f"Dataset '{DATASET_ID}' already exists")
     except Exception:
         dataset = bigquery.Dataset(dataset_ref)
-        dataset.location = "US"
+        dataset.location = BIGQUERY_LOCATION
 
         client.create_dataset(dataset)
-        print(f"Created dataset '{DATASET_ID}'")
+        print(f"Created dataset '{DATASET_ID}' in location '{BIGQUERY_LOCATION}'")
 
 
-# ===== RUN 1 Table =====
-def run_ddl_file(client, file_path):
-    print(f"\n⏳ Running: {file_path}")
+def render_sql_template(sql: str) -> str:
+    return (
+        sql.replace("{PROJECT_ID}", PROJECT_ID)
+        .replace("{DATASET_ID}", DATASET_ID)
+    )
+
+
+def run_ddl_file(client, file_path: Path):
+    print(f"\nRunning: {file_path}")
 
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            sql = f.read()
-
-        # replace project placeholder
-        sql = sql.replace("your_project", PROJECT_ID)
+        sql = render_sql_template(file_path.read_text(encoding="utf-8"))
 
         job = client.query(sql)
         job.result()
 
-        print(f"Success: {os.path.basename(file_path)}")
+        print(f"Success: {file_path.name}")
 
     except Exception as e:
         print(f"Failed: {file_path}")
         print(f"Error: {e}")
-        raise e  # dừng luôn nếu lỗi
+        raise
 
 
-# ===== RUN ALL =====
 def run_all_ddl():
     print("START RUNNING ALL DDL")
+    print(f"project={PROJECT_ID}, dataset={DATASET_ID}")
 
     client = get_client()
-
-    # 1. create dataset
     create_dataset_if_not_exists(client)
 
-    # ===== DIMENSIONS =====
-    dim_files = sorted(glob.glob("HQTCSDL/warehouse/ddl/dimensions/*.sql"))
+    dim_files = sorted((DDL_DIR / "dimensions").glob("*.sql"))
 
     print("\nRUNNING DIMENSIONS...")
     for file in dim_files:
         run_ddl_file(client, file)
 
-    # ===== FACTS =====
-    fact_files = sorted(glob.glob("HQTCSDL/warehouse/ddl/facts/*.sql"))
+    fact_files = sorted((DDL_DIR / "facts").glob("*.sql"))
 
     print("\nRUNNING FACTS...")
     for file in fact_files:
@@ -86,6 +104,5 @@ def run_all_ddl():
     print("\nALL DONE!")
 
 
-# ===== MAIN =====
 if __name__ == "__main__":
     run_all_ddl()

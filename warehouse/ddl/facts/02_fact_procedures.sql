@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS `project-0bccb5ce-036b-493e-9c0.healthcare_core.Fact_Procedures` (
+CREATE TABLE IF NOT EXISTS `{PROJECT_ID}.{DATASET_ID}.Fact_Procedures` (
   Id STRING NOT NULL,
   Encounter_Id STRING,
   Procedure_Code STRING,
@@ -14,7 +14,9 @@ CREATE TABLE IF NOT EXISTS `project-0bccb5ce-036b-493e-9c0.healthcare_core.Fact_
   Base_Cost FLOAT64,
   Unclaimed_Cost FLOAT64
 )
-CLUSTER BY Patient_Id, Procedure_Code
+PARTITION BY RANGE_BUCKET(Start_Date_Key, GENERATE_ARRAY(20240101, 20270101, 100))
+CLUSTER BY Procedure_Code, Patient_Id, Provider_Id
 OPTIONS(
+  require_partition_filter = TRUE,
   description="Bảng Fact chi tiết thủ thuật y tế"
 );

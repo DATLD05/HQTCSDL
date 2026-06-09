@@ -13,6 +13,7 @@ venv/
 # Environment files
 .env
 .env.*
+!.env.example
 
 # Notebook/cache artifacts
 .ipynb_checkpoints/

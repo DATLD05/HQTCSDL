@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS `project-0bccb5ce-036b-493e-9c0.healthcare_core.Fact_Encounter_Metrics` (
+CREATE TABLE IF NOT EXISTS `{PROJECT_ID}.{DATASET_ID}.Fact_Encounter_Metrics` (
   Id STRING NOT NULL,
   Encounter_Id STRING,
   Patient_Id STRING,
@@ -23,7 +23,9 @@ CREATE TABLE IF NOT EXISTS `project-0bccb5ce-036b-493e-9c0.healthcare_core.Fact_
   Is_Readmission_30D INT64,
   Is_Death_30D INT64
 )
-CLUSTER BY Patient_Id, Provider_Id
+PARTITION BY RANGE_BUCKET(Start_Date_Key, GENERATE_ARRAY(20240101, 20270101, 100))
+CLUSTER BY Patient_Id, Provider_Id, Payer_Id
 OPTIONS(
+  require_partition_filter = TRUE,
   description="Bảng Fact trung tâm lưu trữ chỉ số lượt khám"
 );

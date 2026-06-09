@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS `project-0bccb5ce-036b-493e-9c0.healthcare_core.Fact_Medications` (
+CREATE TABLE IF NOT EXISTS `{PROJECT_ID}.{DATASET_ID}.Fact_Medications` (
   Id STRING NOT NULL,
   Encounter_Id STRING,
   Medication_Code STRING,
@@ -17,5 +17,9 @@ CREATE TABLE IF NOT EXISTS `project-0bccb5ce-036b-493e-9c0.healthcare_core.Fact_
   Base_Cost FLOAT64,
   Covered_Cost FLOAT64
 )
-CLUSTER BY Patient_Id, Medication_Code
-OPTIONS(description="Bảng Fact chi tiết đơn thuốc");
+PARTITION BY RANGE_BUCKET(Start_Date_Key, GENERATE_ARRAY(20240101, 20270101, 100))
+CLUSTER BY Medication_Code, Patient_Id, Payer_Id
+OPTIONS(
+  require_partition_filter = TRUE,
+  description="Bảng Fact chi tiết đơn thuốc"
+);

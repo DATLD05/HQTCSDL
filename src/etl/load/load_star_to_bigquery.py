@@ -28,127 +28,6 @@ _STAR_TABLES = (
     "Fact_Medications",
 )
 
-_TABLE_SCHEMAS: dict[str, list[bigquery.SchemaField]] = {
-    "Dim_Patient": [
-        bigquery.SchemaField("Id", "STRING"),
-        bigquery.SchemaField("BirthDate", "DATE"),
-        bigquery.SchemaField("DeathDate", "DATE"),
-        bigquery.SchemaField("Gender", "STRING"),
-        bigquery.SchemaField("Race", "STRING"),
-    ],
-    "Dim_Payer": [
-        bigquery.SchemaField("Id", "STRING"),
-        bigquery.SchemaField("Name", "STRING"),
-        bigquery.SchemaField("State_Headquartered", "STRING"),
-    ],
-    "Dim_Provider": [
-        bigquery.SchemaField("Id", "STRING"),
-        bigquery.SchemaField("Name", "STRING"),
-        bigquery.SchemaField("Speciality", "STRING"),
-    ],
-    "Dim_Procedure": [
-        bigquery.SchemaField("Code", "STRING"),
-        bigquery.SchemaField("Description", "STRING"),
-        bigquery.SchemaField("Procedure_Category", "STRING"),
-        bigquery.SchemaField("Is_Top_Pareto", "BOOL"),
-    ],
-    "Dim_Diagnosis": [
-        bigquery.SchemaField("Code", "STRING"),
-        bigquery.SchemaField("Description", "STRING"),
-        bigquery.SchemaField("Diagnosis_Group", "STRING"),
-    ],
-    "Dim_Medication": [
-        bigquery.SchemaField("Code", "STRING"),
-        bigquery.SchemaField("Name", "STRING"),
-        bigquery.SchemaField("Drug_Class", "STRING"),
-        bigquery.SchemaField("Form", "STRING"),
-        bigquery.SchemaField("Strength", "STRING"),
-    ],
-    "Dim_Date": [
-        bigquery.SchemaField("Date_Key", "INT64"),
-        bigquery.SchemaField("Date", "DATE"),
-        bigquery.SchemaField("Year", "INT64"),
-        bigquery.SchemaField("Month", "INT64"),
-        bigquery.SchemaField("DayOfWeek", "STRING"),
-    ],
-    "Dim_Time": [
-        bigquery.SchemaField("Time_Key", "INT64"),
-        bigquery.SchemaField("Hour", "INT64"),
-        bigquery.SchemaField("Time_Bucket", "STRING"),
-    ],
-    "Dim_Encounter": [
-        bigquery.SchemaField("Id", "STRING"),
-        bigquery.SchemaField("EncounterClass", "STRING"),
-        bigquery.SchemaField("Age_Group", "STRING"),
-        bigquery.SchemaField("Duration_Bucket", "STRING"),
-    ],
-    "Fact_Encounter_Metrics": [
-        bigquery.SchemaField("Id", "STRING"),
-        bigquery.SchemaField("Encounter_Id", "STRING"),
-        bigquery.SchemaField("Patient_Id", "STRING"),
-        bigquery.SchemaField("Provider_Id", "STRING"),
-        bigquery.SchemaField("Payer_Id", "STRING"),
-        bigquery.SchemaField("Start_Date_Key", "INT64"),
-        bigquery.SchemaField("Start_Time_Key", "INT64"),
-        bigquery.SchemaField("Stop_Date_Key", "INT64"),
-        bigquery.SchemaField("Stop_Time_Key", "INT64"),
-        bigquery.SchemaField("Patient_Age", "INT64"),
-        bigquery.SchemaField("Duration_Minutes", "INT64"),
-        bigquery.SchemaField("Length_Of_Stay_Days", "INT64"),
-        bigquery.SchemaField("Base_Encounter_Cost", "FLOAT64"),
-        bigquery.SchemaField("Total_Claim_Cost", "FLOAT64"),
-        bigquery.SchemaField("Payer_Coverage", "FLOAT64"),
-        bigquery.SchemaField("Out_Of_Pocket_Cost", "FLOAT64"),
-        bigquery.SchemaField("Is_Admitted", "INT64"),
-        bigquery.SchemaField("Is_Readmission_30D", "INT64"),
-        bigquery.SchemaField("Is_Death_30D", "INT64"),
-    ],
-    "Fact_Procedures": [
-        bigquery.SchemaField("Id", "STRING"),
-        bigquery.SchemaField("Encounter_Id", "STRING"),
-        bigquery.SchemaField("Procedure_Code", "STRING"),
-        bigquery.SchemaField("Start_Date_Key", "INT64"),
-        bigquery.SchemaField("Start_Time_Key", "INT64"),
-        bigquery.SchemaField("Patient_Id", "STRING"),
-        bigquery.SchemaField("Provider_Id", "STRING"),
-        bigquery.SchemaField("Payer_Id", "STRING"),
-        bigquery.SchemaField("Procedure_Duration_Minutes", "INT64"),
-        bigquery.SchemaField("Base_Cost", "FLOAT64"),
-        bigquery.SchemaField("Unclaimed_Cost", "FLOAT64"),
-    ],
-    "Fact_Conditions": [
-        bigquery.SchemaField("Id", "STRING"),
-        bigquery.SchemaField("Encounter_Id", "STRING"),
-        bigquery.SchemaField("Condition_Code", "STRING"),
-        bigquery.SchemaField("Start_Date_Key", "INT64"),
-        bigquery.SchemaField("Patient_Id", "STRING"),
-        bigquery.SchemaField("Provider_Id", "STRING"),
-        bigquery.SchemaField("Payer_Id", "STRING"),
-    ],
-    "Fact_Medications": [
-        bigquery.SchemaField("Id", "STRING"),
-        bigquery.SchemaField("Encounter_Id", "STRING"),
-        bigquery.SchemaField("Medication_Code", "STRING"),
-        bigquery.SchemaField("Patient_Id", "STRING"),
-        bigquery.SchemaField("Provider_Id", "STRING"),
-        bigquery.SchemaField("Payer_Id", "STRING"),
-        bigquery.SchemaField("Start_Date_Key", "INT64"),
-        bigquery.SchemaField("End_Date_Key", "INT64"),
-        bigquery.SchemaField("Dosage", "FLOAT64"),
-        bigquery.SchemaField("Frequency", "STRING"),
-        bigquery.SchemaField("Duration_Days", "INT64"),
-        bigquery.SchemaField("Base_Cost", "FLOAT64"),
-        bigquery.SchemaField("Covered_Cost", "FLOAT64"),
-    ],
-}
-
-
-def _env_or(value: str | None, env_name: str) -> str:
-    out = value or os.getenv(env_name)
-    if not out:
-        raise RuntimeError(f"Missing required config: {env_name}")
-    return out
-
 
 def _resolve_credentials_path(credentials_path: str | None) -> str:
     candidate = (
@@ -179,15 +58,25 @@ def _default_dataset_id(project_id: str) -> str:
     return f"{normalized}"
 
 
-def _ensure_dataset_exists(client: bigquery.Client, project_id: str, dataset_id: str) -> None:
+def _require_dataset_exists(client: bigquery.Client, project_id: str, dataset_id: str) -> None:
     dataset_ref = f"{project_id}.{dataset_id}"
     try:
         client.get_dataset(dataset_ref)
-    except Exception:
-        dataset = bigquery.Dataset(dataset_ref)
-        dataset.location = "US"
-        client.create_dataset(dataset)
-        print(f"Created dataset: {dataset_ref}")
+    except Exception as exc:
+        raise RuntimeError(
+            f"BigQuery dataset does not exist: {dataset_ref}. "
+            "Run `python warehouse/scripts/main.py` before loading data."
+        ) from exc
+
+
+def _require_table_exists(client: bigquery.Client, table_id: str) -> None:
+    try:
+        client.get_table(table_id)
+    except Exception as exc:
+        raise RuntimeError(
+            f"BigQuery table does not exist: {table_id}. "
+            "Create warehouse tables first with `python warehouse/scripts/main.py`."
+        ) from exc
 
 
 def _get_client(*, project_id: str, credentials_path: str) -> bigquery.Client:
@@ -210,7 +99,7 @@ def run(
     write_disposition: str = "WRITE_TRUNCATE",
 ) -> dict[str, int]:
     """
-    Load star CSV files to BigQuery tables and return table row counts.
+    Load star CSV files into pre-created BigQuery tables and return row counts.
     """
     credentials_path = _resolve_credentials_path(credentials_path)
     project_id = (
@@ -227,11 +116,12 @@ def run(
     star_dir = star_dir or STAR_DATA_DIR
 
     client = _get_client(project_id=project_id, credentials_path=credentials_path)
-    _ensure_dataset_exists(client, project_id, dataset_id)
+    _require_dataset_exists(client, project_id, dataset_id)
     out: dict[str, int] = {}
 
     print("=== BigQuery Load (star) ===")
     print(f"project={project_id}, dataset={dataset_id}, star_dir={star_dir}")
+    print("mode=load-only, table creation is handled by warehouse/ddl")
 
     for table_name in _STAR_TABLES:
         csv_path = _csv_path_for_table(star_dir, table_name)
@@ -239,17 +129,14 @@ def run(
             raise RuntimeError(f"Missing star CSV: {csv_path}")
 
         table_id = f"{project_id}.{dataset_id}.{table_name}"
-        schema = _TABLE_SCHEMAS.get(table_name)
-        if schema is None:
-            raise RuntimeError(f"Missing BigQuery schema mapping for table: {table_name}")
+        _require_table_exists(client, table_id)
 
         job_config = bigquery.LoadJobConfig(
             source_format=bigquery.SourceFormat.CSV,
             skip_leading_rows=1,
             write_disposition=write_disposition,
             autodetect=False,
-            schema=schema,
-            create_disposition=bigquery.CreateDisposition.CREATE_IF_NEEDED,
+            create_disposition=bigquery.CreateDisposition.CREATE_NEVER,
         )
 
         with open(csv_path, "rb") as f:
@@ -261,4 +148,3 @@ def run(
         print(f"Loaded {table_name} from {csv_path.name} -> rows={table.num_rows}")
 
     return out
-
