@@ -1,8 +1,0 @@
-venv/
-__pycache__/
-*.pyc
-.env
-*.json
-.ipynb_checkpoints/
-data/output/
-gcp-key.json
