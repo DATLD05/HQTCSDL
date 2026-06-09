@@ -1,2 +1,4 @@
-google-cloud-bigquery
-python-dotenv
+# Dependencies are declared in pyproject.toml.
+# Kept for compatibility with workflows that still run:
+#   pip install -r requirements.txt
+-e .

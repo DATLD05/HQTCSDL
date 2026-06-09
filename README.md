@@ -26,8 +26,8 @@ raw CSV / SQL Server
 ```text
 .
 ├── main.py                         # Script kiểm tra Spark đơn giản
-├── pyproject.toml                  # Cấu hình project và dependency chính
-├── requirements.txt                # Dependency bổ sung cho BigQuery/dotenv
+├── pyproject.toml                  # Cấu hình project và toàn bộ dependency
+├── requirements.txt                # File tương thích, trỏ về pyproject.toml
 ├── src/etl/
 │   ├── paths.py                    # Đường dẫn dữ liệu raw/clean/star
 │   ├── csv_utils.py                # Helper đọc/ghi CSV và chuẩn hóa dữ liệu
@@ -62,7 +62,7 @@ python --version
 Từ thư mục dự án:
 
 ```bash
-cd /media/le-duy-hung/code/HQTCSDL_ETL/HQTCSDL
+cd HQTCSDL
 ```
 
 Tạo virtual environment:
@@ -76,10 +76,11 @@ Cài dependency:
 
 ```bash
 pip install -e .
-pip install -r requirements.txt
 ```
 
 Nếu máy không có `python3.10`, có thể dùng `python3.11`. Không nên dùng Python 3.12 vì project đang khai báo `<3.12`.
+
+Toàn bộ dependency chính được khai báo trong `pyproject.toml`. File `requirements.txt` chỉ được giữ để tương thích với workflow cũ; nếu chạy `pip install -r requirements.txt` thì pip cũng sẽ cài project thông qua `-e .`.
 
 ## Dữ Liệu Đầu Vào
 
@@ -262,7 +263,6 @@ PY
 ## Ghi Chú Quan Trọng
 
 - `README.md` này mô tả pipeline hiện tại trong `src/etl`.
-- Thư mục `app/` chỉ là scaffold cũ và không tham gia pipeline chính.
-- Dependency trong `pyproject.toml` và `requirements.txt` hiện chưa hoàn toàn gom chung một nơi.
+- Dependency chính đã được gom về `pyproject.toml`; `requirements.txt` chỉ là file tương thích.
 - Dữ liệu `procedures` sau clean có thể giảm mạnh do rule lọc theo encounter window và quan hệ patient/encounter. Khi làm báo cáo, nên giải thích rõ logic này.
 - Không commit file credential thật. Thư mục `.credentials/` đã nằm trong `.gitignore`.

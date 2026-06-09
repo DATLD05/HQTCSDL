@@ -1,12 +1,22 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "hqtcsdl-quanly-khaithachosobenhanbenhvien"
 version = "0.1.0"
-description = "Add your description here"
+description = "PySpark ETL pipeline for healthcare data warehouse star schema"
 readme = "README.md"
 requires-python = ">=3.10,<3.12"
 dependencies = [
-    "dotenv>=0.9.9",
+    "google-cloud-bigquery>=3.0.0",
     "pandas>=2.3.3",
     "prefect>=3.7.3",
     "pyspark>=4.1.1",
+    "python-dotenv>=1.0.0",
 ]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+namespaces = true
