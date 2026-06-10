@@ -1,16 +1,20 @@
 from pathlib import Path
-from typing import TypedDict
+from typing_extensions import TypedDict
 
 from pyspark.sql import DataFrame, SparkSession
 
-from src.etl.extract.extract_conditions import extract as extract_conditions
-from src.etl.extract.extract_encounters import extract as extract_encounters
-from src.etl.extract.extract_medications import extract as extract_medications
-from src.etl.extract.extract_observations import extract as extract_observations
-from src.etl.extract.extract_patients import extract as extract_patients
-from src.etl.extract.extract_payers import extract as extract_payers
-from src.etl.extract.extract_providers import extract as extract_providers
-from src.etl.extract.extract_procedures import extract as extract_procedures
+from src.etl.extract.extract_csv import extract_csv
+from src.etl.extract.extract_db import extract_db
+from src.etl.paths import (
+    PATIENTS_CSV,
+    PAYERS_CSV,
+    PROVIDERS_CSV,
+    ENCOUNTERS_CSV,
+    CONDITIONS_CSV,
+    OBSERVATIONS_CSV,
+    PROCEDURES_CSV,
+    MEDICATIONS_CSV,
+)
 
 
 class RawCsvPaths(TypedDict, total=False):
@@ -24,19 +28,38 @@ class RawCsvPaths(TypedDict, total=False):
     medications: Path | None
 
 
-def extract_all(
+CSV_FILES = {
+    "patients": PATIENTS_CSV,
+    "payers": PAYERS_CSV,
+    "providers": PROVIDERS_CSV,
+    "encounters": ENCOUNTERS_CSV,
+    "conditions": CONDITIONS_CSV,
+    "observations": OBSERVATIONS_CSV,
+    "procedures": PROCEDURES_CSV,
+    "medications": MEDICATIONS_CSV,
+}
+
+
+def extract_all_csv(
     spark: SparkSession,
     paths: RawCsvPaths | None = None,
 ) -> dict[str, DataFrame]:
-    """Load all eight source CSVs as raw DataFrames (column names trimmed)."""
     p = paths or {}
+
     return {
-        "patients": extract_patients(spark, p.get("patients")),
-        "payers": extract_payers(spark, p.get("payers")),
-        "providers": extract_providers(spark, p.get("providers")),
-        "encounters": extract_encounters(spark, p.get("encounters")),
-        "conditions": extract_conditions(spark, p.get("conditions")),
-        "observations": extract_observations(spark, p.get("observations")),
-        "procedures": extract_procedures(spark, p.get("procedures")),
-        "medications": extract_medications(spark, p.get("medications")),
+        name: extract_csv(
+            spark,
+            default_path,
+            p.get(name),
+        )
+        for name, default_path in CSV_FILES.items()
+    }
+
+
+def extract_all_db(
+    spark: SparkSession,
+) -> dict[str, DataFrame]:
+    return {
+        table: extract_db(spark, table)
+        for table in CSV_FILES.keys()
     }

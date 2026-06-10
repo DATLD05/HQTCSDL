@@ -1,6 +1,6 @@
 """Shared transform helpers: patient lifecycle, encounter windows, typing."""
 
-from __future__ import annotations
+
 
 from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as F

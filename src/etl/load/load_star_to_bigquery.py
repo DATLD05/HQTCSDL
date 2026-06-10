@@ -1,4 +1,4 @@
-from __future__ import annotations
+
 
 import json
 import os
@@ -33,12 +33,12 @@ def _resolve_credentials_path(credentials_path: str | None) -> str:
     candidate = (
         credentials_path
         or os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-        or str(Path(".credentials/gcp/bigquery-loader.sa.dev.json").resolve())
+        or str(Path("credentials/gcp/bigquery-loader.sa.dev.json").resolve())
     )
     if not Path(candidate).exists():
         raise RuntimeError(
             "Missing service-account key file. Set GOOGLE_APPLICATION_CREDENTIALS "
-            "or place key at .credentials/gcp/bigquery-loader.sa.dev.json"
+            "or place key at credentials/gcp/bigquery-loader.sa.dev.json"
         )
     return candidate
 

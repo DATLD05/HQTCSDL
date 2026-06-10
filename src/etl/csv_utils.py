@@ -1,6 +1,6 @@
 """Shared CSV I/O and small Spark column helpers for ETL."""
 
-from __future__ import annotations
+
 
 import shutil
 from pathlib import Path
